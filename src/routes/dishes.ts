@@ -78,4 +78,23 @@ export async function dishesRoutes(app: FastifyInstance) {
 
     return rep.status(204).send()
   })
+
+  app.delete("/:id", async (req, rep) => {
+    const deleteDishParams = z.object({
+      id: z.string(),
+    })
+
+    const { id } = deleteDishParams.parse(req.params)
+    const { userId } = req.cookies
+
+    const dish = await knex("dishes").where({ id, user_id: userId }).first()
+
+    if (!dish) {
+      return rep.status(404).send({ error: "dish not found" })
+    }
+
+    await knex("dishes").delete().where({ id, user_id: userId })
+
+    return rep.status(204).send()
+  })
 }
