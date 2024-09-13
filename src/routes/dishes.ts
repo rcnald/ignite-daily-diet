@@ -97,4 +97,29 @@ export async function dishesRoutes(app: FastifyInstance) {
 
     return rep.status(204).send()
   })
+
+  app.get("/", async (req, rep) => {
+    const { userId } = req.cookies
+
+    const dishes = await knex("dishes").where({ user_id: userId })
+
+    return rep.status(200).send({ dishes })
+  })
+
+  app.get("/:id", async (req, rep) => {
+    const getDishParams = z.object({
+      id: z.string(),
+    })
+
+    const { id } = getDishParams.parse(req.params)
+    const { userId } = req.cookies
+
+    const dish = await knex("dishes").where({ id, user_id: userId }).first()
+
+    if (!dish) {
+      return rep.status(404).send({ error: "dish not found" })
+    }
+
+    return rep.status(200).send({ dish })
+  })
 }
