@@ -1,4 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify"
+import { knex } from "../database"
 
 export async function isUserAuthenticated(
   req: FastifyRequest,
@@ -6,7 +7,9 @@ export async function isUserAuthenticated(
 ) {
   const { userId } = req.cookies
 
-  if (!userId) {
+  const user = await knex("users").where({ id: userId }).first()
+
+  if (!user) {
     return rep.status(401).send({ error: "Unauthorized" })
   }
 }

@@ -36,4 +36,46 @@ export async function dishesRoutes(app: FastifyInstance) {
 
     return rep.status(201).send()
   })
+
+  app.put("/:id", async (req, rep) => {
+    const updateDishParams = z.object({
+      id: z.string(),
+    })
+
+    const updateDishBody = z.object({
+      name: z.string(),
+      description: z.string().optional(),
+      date: z.string(),
+      time: z.string(),
+      followsDiet: z.coerce.boolean(),
+    })
+
+    const { id } = updateDishParams.parse(req.params)
+    const { userId } = req.cookies
+
+    const dish = await knex("dishes").where({ id, user_id: userId }).first()
+
+    if (!dish) {
+      return rep.status(404).send({ error: "dish id provided do not exists" })
+    }
+
+    const { success, data } = updateDishBody.safeParse(req.body)
+
+    if (!success) {
+      return rep.status(400).send({ message: "Missing params!" })
+    }
+
+    const { date, followsDiet, name, time, description } = data
+
+    await knex("dishes")
+      .update({
+        name,
+        description,
+        follows_diet: followsDiet,
+        created_at: new Date(`${date}:${time}`).toISOString(),
+      })
+      .where({ id, user_id: userId })
+
+    return rep.status(204).send()
+  })
 }
