@@ -10,7 +10,11 @@ export async function dishesRoutes(app: FastifyInstance) {
       description: z.string().optional(),
       date: z.string(),
       time: z.string(),
-      followsDiet: z.coerce.boolean(),
+      follows_diet: z.enum(["true", "false"]).transform((value) => {
+        if (value === "true") return true
+
+        return false
+      }),
     })
 
     const { success, data } = createDishesBodySchema.safeParse(req.body)
@@ -19,7 +23,7 @@ export async function dishesRoutes(app: FastifyInstance) {
       return rep.status(400).send({ message: "Missing params!" })
     }
 
-    const { name, date, followsDiet, time, description } = data
+    const { name, date, follows_diet: followsDiet, time, description } = data
 
     const { userId } = req.cookies
 

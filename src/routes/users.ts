@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify"
 import { z } from "zod"
 import { knex } from "../database"
 import { randomUUID } from "node:crypto"
+import { getFollowsDietStreak } from "../lib/utils"
 
 export async function usersRoutes(app: FastifyInstance) {
   app.post("/", async (req, rep) => {
@@ -27,5 +28,31 @@ export async function usersRoutes(app: FastifyInstance) {
     })
 
     return rep.status(201).send()
+  })
+
+  app.get("/metrics", async (req, rep) => {
+    const { userId } = req.cookies
+
+    const dishes = await knex("dishes").where({ user_id: userId })
+
+    if (!dishes.length) {
+      return rep.status(404).send({ message: "user do not have dishes" })
+    }
+
+    const dishesAmount = dishes.length
+    const dishesFollowingDietAmount = dishes.filter((dish) => {
+      return dish.follows_diet
+    }).length
+    const dishesNotFollowingDietAmount =
+      dishesAmount - dishesFollowingDietAmount
+
+    const dishesFollowingDietStreak = getFollowsDietStreak(dishes)
+
+    return {
+      dishesAmount,
+      dishesFollowingDietAmount,
+      dishesNotFollowingDietAmount,
+      dishesFollowingDietStreak,
+    }
   })
 }
